@@ -1,68 +1,231 @@
-﻿<!-- Views/CodeDefWindow.xaml -->
-<Window x:Class="FourDTools.Views.CodeDefWindow"
+﻿<Window x:Class="FourDTools.Views.CodeDefWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:FourDTools.Converters"
-        Title="4D CodeDef Editor" Height="420" Width="680"
-        WindowStartupLocation="CenterOwner" ResizeMode="CanResizeWithGrip"
-        FontSize="13">
+        Title="4D CodeDef Editor"
+        Height="520"
+        Width="820"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResizeWithGrip"
+        Background="{DynamicResource WindowBackgroundBrush}"
+        FontSize="13"
+        WindowStyle="None">
+
+    <!-- Merge the independent theme -->
 
     <Window.Resources>
-        <conv:InvertBoolConverter x:Key="invertBool"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/FourDTools;component/Themes/MurphyTheme.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <conv:InvertBoolConverter x:Key="invertBool"/>
+        </ResourceDictionary>
     </Window.Resources>
 
-    <Grid Margin="12">
+
+    <Grid>
+
         <Grid.RowDefinitions>
+            <RowDefinition Height="44"/>
+            <!-- Title bar (caption) -->
             <RowDefinition Height="Auto"/>
+            <!-- Toolbar -->
             <RowDefinition Height="*"/>
+            <!-- DataGrid -->
             <RowDefinition Height="Auto"/>
+            <!-- Footer -->
         </Grid.RowDefinitions>
 
-        <!-- Toolbar -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-            <Button Content="Reload Selection" Width="140" Margin="0,0,8,0"
-                    Command="{Binding CmdReloadSelection}"/>
-            <Button Content="Prev" Width="70" Margin="0,0,8,0"
-                    Command="{Binding CmdPrev}"/>
-            <Button Content="Next" Width="70" Margin="0,0,8,0"
-                    Command="{Binding CmdNext}"/>
-            <Button Content="Save Current" Width="120" Margin="0,0,8,0"
-                    Command="{Binding CmdSaveCurrent}"/>
-            <Button Content="Save All (Host only)" Width="160" Margin="0,0,8,0"
-                    Command="{Binding CmdSaveAll}"/>
-            <Button Content="Close" Width="80"
-                    Command="{Binding CmdClose}"/>
+        <!-- ====================== -->
+        <!-- Title bar (Murphy green) -->
+        <!-- ====================== -->
+
+        <Border Grid.Row="0" Background="{StaticResource MurphyGreenBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Drag area -->
+                <Border Background="Transparent"
+                        MouseLeftButtonDown="TitleBar_OnMouseLeftButtonDown">
+                    <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="12,0,0,0">
+                        <TextBlock Text="4D CodeDef Editor"
+                                   Style="{StaticResource TitleText}"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Minimize + Close buttons -->
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+
+                    <Button Style="{StaticResource ChromeButton}"
+                            Click="MinButton_OnClick">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                                   Text="&#xE921;" />
+                        <!-- Minimize -->
+                    </Button>
+
+                    <Button Style="{StaticResource ChromeButton}"
+                            Click="CloseButton_OnClick">
+                        <TextBlock FontFamily="Segoe MDL2 Assets"
+                                   Text="&#xE8BB;" />
+                        <!-- Close -->
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ====================== -->
+        <!-- Toolbar                 -->
+        <!-- ====================== -->
+        <StackPanel Orientation="Horizontal"
+                    Grid.Row="1"
+                    Margin="12,12,12,8">
+
+            <!-- Reload -->
+            <Button Style="{StaticResource PrimaryButton}"
+                    Command="{Binding CmdReloadSelection}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE72C;" Margin="0,0,6,0"/>
+                    <!-- Refresh -->
+                    <TextBlock Text="Reload Selection"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Prev -->
+            <Button Style="{StaticResource PrimaryButton}"
+                    Command="{Binding CmdPrev}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE0A6;" Margin="0,0,6,0"/>
+                    <!-- Back -->
+                    <TextBlock Text="Prev"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Next -->
+            <Button Style="{StaticResource PrimaryButton}"
+                    Command="{Binding CmdNext}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE0AB;" Margin="0,0,6,0"/>
+                    <!-- Forward -->
+                    <TextBlock Text="Next"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Save Current -->
+            <Button Style="{StaticResource PrimaryButton}"
+                    Command="{Binding CmdSaveCurrent}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE105;" Margin="0,0,6,0"/>
+                    <!-- Save -->
+                    <TextBlock Text="Save Current"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Save All -->
+            <Button Style="{StaticResource PrimaryButton}"
+                    Command="{Binding CmdSaveAll}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE149;" Margin="0,0,6,0"/>
+                    <!-- SaveAll / SaveAs glyph -->
+                    <TextBlock Text="Save All (Host only)"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Close -->
+            <Button Style="{StaticResource SecondaryButton}"
+                    Command="{Binding CmdClose}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8BB;" Margin="0,0,6,0"/>
+                    <!-- Close -->
+                    <TextBlock Text="Close"/>
+                </StackPanel>
+            </Button>
         </StackPanel>
 
-        <!-- List -->
-        <DataGrid Grid.Row="1" ItemsSource="{Binding Items}" AutoGenerateColumns="False" CanUserAddRows="False"
-                  IsReadOnly="False" SelectionMode="Single" SelectedIndex="{Binding CurrentIndex, Mode=TwoWay}">
+        <!-- ====================== -->
+        <!-- DataGrid                -->
+        <!-- ====================== -->
+        <DataGrid Grid.Row="2"
+                  Margin="12,0,12,0"
+                  ItemsSource="{Binding Items}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  SelectionMode="Single"
+                  SelectedIndex="{Binding CurrentIndex, Mode=TwoWay}">
+
             <DataGrid.Columns>
-                <DataGridTextColumn Header="Handle" Binding="{Binding Handle}" IsReadOnly="True" Width="100"/>
-                <DataGridTextColumn Header="XREF?" Binding="{Binding IsInXref}" IsReadOnly="True" Width="60"/>
-                <DataGridComboBoxColumn Header="4D_Code_Type" SelectedItemBinding="{Binding CodeType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                        Width="140">
+
+                <DataGridTextColumn Header="Handle"
+                                    Binding="{Binding Handle}"
+                                    IsReadOnly="True"
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="XREF?"
+                                    Binding="{Binding IsInXref}"
+                                    IsReadOnly="True"
+                                    Width="60"/>
+
+                <DataGridComboBoxColumn Header="4D_Code_Type"
+                                        Width="150"
+                                        SelectedItemBinding="{Binding CodeType, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                     <DataGridComboBoxColumn.ElementStyle>
                         <Style TargetType="ComboBox">
-                            <Setter Property="ItemsSource" Value="{Binding DataContext.AllowedTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                            <Setter Property="IsEnabled" Value="{Binding IsInXref, Converter={StaticResource invertBool}}"/>
+                            <Setter Property="ItemsSource"
+                                    Value="{Binding DataContext.AllowedTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Setter Property="IsEnabled"
+                                    Value="{Binding IsInXref, Converter={StaticResource invertBool}}"/>
                         </Style>
                     </DataGridComboBoxColumn.ElementStyle>
                     <DataGridComboBoxColumn.EditingElementStyle>
                         <Style TargetType="ComboBox">
-                            <Setter Property="ItemsSource" Value="{Binding DataContext.AllowedTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
+                            <Setter Property="ItemsSource"
+                                    Value="{Binding DataContext.AllowedTypes, RelativeSource={RelativeSource AncestorType=Window}}"/>
                             <Setter Property="IsEditable" Value="False"/>
-                            <Setter Property="IsEnabled" Value="{Binding IsInXref, Converter={StaticResource invertBool}}"/>
+                            <Setter Property="IsEnabled"
+                                    Value="{Binding IsInXref, Converter={StaticResource invertBool}}"/>
                         </Style>
                     </DataGridComboBoxColumn.EditingElementStyle>
                 </DataGridComboBoxColumn>
-                <DataGridTextColumn Header="4D_Code_Value" Binding="{Binding CodeValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                <DataGridTextColumn Header="Dirty" Binding="{Binding IsDirty}" IsReadOnly="True" Width="60"/>
+
+                <DataGridTextColumn Header="4D_Code_Value"
+                                    Width="*"
+                                    Binding="{Binding CodeValue, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground"
+                                    Value="{Binding IsInXref,
+                                            Converter={StaticResource invertBool},
+                                            ConverterParameter=disabled}"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="IsReadOnly" Value="{Binding IsInXref}"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Dirty"
+                                    Binding="{Binding IsDirty}"
+                                    IsReadOnly="True"
+                                    Width="60"/>
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- Status -->
-        <TextBlock Grid.Row="2" Text="Tip: XREF rows are read-only here. Open the XREF DWG to edit their XData."
-                   Foreground="Gray" Margin="0,8,0,0"/>
+        <!-- ====================== -->
+        <!-- Footer tip              -->
+        <!-- ====================== -->
+        <Border Grid.Row="3" Margin="12,8,12,12" Background="{StaticResource SurfaceWhiteBrush}" Padding="8" BorderBrush="{StaticResource NeutralBorderBrush}" BorderThickness="1">
+            <TextBlock Text="Tip: XREF rows are read-only here. Open the XREF DWG to edit their XData."
+                       Foreground="{StaticResource NeutralMidBrush}"/>
+        </Border>
+
     </Grid>
 </Window>

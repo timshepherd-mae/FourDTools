@@ -75,6 +75,7 @@ namespace FourDTools.ViewModels
 
             try
             {
+                using (doc.LockDocument())
                 using (var tr = db.TransactionManager.StartTransaction())
                 {
                     // Use current selection; if empty, prompt for polylines
@@ -164,9 +165,16 @@ namespace FourDTools.ViewModels
             var db = doc.Database;
             var ed = doc.Editor;
 
-            if (string.IsNullOrWhiteSpace(item.CodeType) || string.IsNullOrWhiteSpace(item.CodeValue))
+
+            if (string.IsNullOrWhiteSpace(item.CodeType))
             {
-                ed.WriteMessage($"\nItem {item.Handle}: CodeType/Value cannot be empty.");
+                ed.WriteMessage($"\nItem {item.Handle}: CodeType cannot be empty (choose one of: {string.Join(", ", AllowedTypes)}).");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(item.CodeValue))
+            {
+                ed.WriteMessage($"\nItem {item.Handle}: CodeValue cannot be empty.");
                 return;
             }
 
@@ -177,8 +185,11 @@ namespace FourDTools.ViewModels
                 return;
             }
 
+            if (!ValidateItem(item, ed)) return;
+
             try
             {
+                using (doc.LockDocument())
                 using (var tr = db.TransactionManager.StartTransaction())
                 {
                     var ent = tr.GetObject(item.Id, OpenMode.ForWrite) as Entity;
@@ -188,7 +199,11 @@ namespace FourDTools.ViewModels
                         return;
                     }
 
-                    XDataService.Write(ent, item.CodeType, item.CodeValue, tr);
+                    string canonicalType =
+                        AllowedTypes.First(t => t.Equals(item.CodeType, StringComparison.OrdinalIgnoreCase));
+
+                    XDataService.Write(ent, canonicalType, item.CodeValue, tr);
+                    //XDataService.Write(ent, item.CodeType, item.CodeValue, tr);
                     item.IsDirty = false;
 
                     tr.Commit();
@@ -204,6 +219,26 @@ namespace FourDTools.ViewModels
             {
                 ed.WriteMessage($"\nError on {item.Handle}: {ex.Message}");
             }
+        }
+
+        private bool ValidateItem(CodeDefItem item, Editor ed)
+        {
+            if (string.IsNullOrWhiteSpace(item.CodeType))
+            {
+                ed.WriteMessage($"\nItem {item.Handle}: CodeType cannot be empty.");
+                return false;
+            }
+            if (!AllowedTypes.Contains(item.CodeType, StringComparer.OrdinalIgnoreCase))
+            {
+                ed.WriteMessage($"\nItem {item.Handle}: '{item.CodeType}' is not a permitted CodeType.");
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(item.CodeValue))
+            {
+                ed.WriteMessage($"\nItem {item.Handle}: CodeValue cannot be empty.");
+                return false;
+            }
+            return true;
         }
 
         private static bool IsEntityInXref(Transaction tr, Entity ent)

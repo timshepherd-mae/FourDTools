@@ -10,7 +10,7 @@ namespace FourDTools.Commands
 {
     public class CodeDefEditorCommand
     {
-        [CommandMethod("4DEDITCODEDEF", CommandFlags.Modal)]
+        [CommandMethod("4DEDITCODEDEF", CommandFlags.Session)]
         public void EditCodeDef()
         {
             var doc = Application.DocumentManager.MdiActiveDocument;

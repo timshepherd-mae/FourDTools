@@ -13,17 +13,37 @@ namespace FourDTools.Models
         public Point3d Location { get; set; } // for user hint, optional
 
         private string _codeType;
+
         public string CodeType
         {
             get => _codeType;
-            set { if (_codeType != value) { _codeType = value; IsDirty = true; OnPropertyChanged(nameof(CodeType)); } }
+            set
+            {
+                var trimmed = (value ?? "").Trim();
+                if (_codeType != trimmed)
+                {
+                    _codeType = trimmed;
+                    IsDirty = true;
+                    OnPropertyChanged(nameof(CodeType));
+                }
+            }
         }
 
         private string _codeValue;
+
         public string CodeValue
         {
             get => _codeValue;
-            set { if (_codeValue != value) { _codeValue = value; IsDirty = true; OnPropertyChanged(nameof(CodeValue)); } }
+            set
+            {
+                var trimmed = (value ?? "").Trim();
+                if (_codeValue != trimmed)
+                {
+                    _codeValue = trimmed;
+                    IsDirty = true;
+                    OnPropertyChanged(nameof(CodeValue));
+                }
+            }
         }
 
         private bool _isDirty;
