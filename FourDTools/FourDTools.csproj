@@ -85,6 +85,7 @@
     <Compile Include="Converters\InvertBoolConverter.cs" />
     <Compile Include="Models\CodeDefItem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Services\TransientOverlayService.cs" />
     <Compile Include="Services\XDataService.cs" />
     <Compile Include="ViewModels\CodeDefViewModel.cs" />
     <Compile Include="ViewModels\RelayCommand.cs" />

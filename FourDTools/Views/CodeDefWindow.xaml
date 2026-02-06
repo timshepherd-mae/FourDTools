@@ -1,4 +1,5 @@
-﻿<Window x:Class="FourDTools.Views.CodeDefWindow"
+﻿<!-- Views/CodeDefWindow.xaml -->
+<Window x:Class="FourDTools.Views.CodeDefWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:conv="clr-namespace:FourDTools.Converters"
@@ -7,28 +8,20 @@
         Width="820"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip"
+        WindowStyle="None"
         Background="{DynamicResource WindowBackgroundBrush}"
-        FontSize="13"
-        WindowStyle="None">
+        FontSize="13">
 
-    <!-- Merge the independent theme -->
-
+    <!-- We rely on programmatic theme merge in code-behind.
+         Keep only local resources here. -->
     <Window.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/FourDTools;component/Themes/MurphyTheme.xaml"/>
-            </ResourceDictionary.MergedDictionaries>
-
-            <conv:InvertBoolConverter x:Key="invertBool"/>
-        </ResourceDictionary>
+        <conv:InvertBoolConverter x:Key="invertBool"/>
     </Window.Resources>
 
-
     <Grid>
-
         <Grid.RowDefinitions>
             <RowDefinition Height="44"/>
-            <!-- Title bar (caption) -->
+            <!-- Title bar -->
             <RowDefinition Height="Auto"/>
             <!-- Toolbar -->
             <RowDefinition Height="*"/>
@@ -37,11 +30,8 @@
             <!-- Footer -->
         </Grid.RowDefinitions>
 
-        <!-- ====================== -->
-        <!-- Title bar (Murphy green) -->
-        <!-- ====================== -->
-
-        <Border Grid.Row="0" Background="{StaticResource MurphyGreenBrush}">
+        <!-- Title Bar (Murphy Green) -->
+        <Border Grid.Row="0" Background="{DynamicResource MurphyGreenBrush}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
@@ -55,103 +45,80 @@
                                 VerticalAlignment="Center"
                                 Margin="12,0,0,0">
                         <TextBlock Text="4D CodeDef Editor"
-                                   Style="{StaticResource TitleText}"/>
+                                   Style="{DynamicResource TitleText}"/>
                     </StackPanel>
                 </Border>
 
-                <!-- Minimize + Close buttons -->
+                <!-- Minimize + Close -->
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
-
-                    <Button Style="{StaticResource ChromeButton}"
+                    <Button Style="{DynamicResource ChromeButton}"
                             Click="MinButton_OnClick">
-                        <TextBlock FontFamily="Segoe MDL2 Assets"
-                                   Text="&#xE921;" />
-                        <!-- Minimize -->
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE921;"/>
                     </Button>
-
-                    <Button Style="{StaticResource ChromeButton}"
+                    <Button Style="{DynamicResource ChromeButton}"
                             Click="CloseButton_OnClick">
-                        <TextBlock FontFamily="Segoe MDL2 Assets"
-                                   Text="&#xE8BB;" />
-                        <!-- Close -->
+                        <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8BB;"/>
                     </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- ====================== -->
-        <!-- Toolbar                 -->
-        <!-- ====================== -->
+        <!-- Toolbar -->
         <StackPanel Orientation="Horizontal"
                     Grid.Row="1"
                     Margin="12,12,12,8">
-
-            <!-- Reload -->
-            <Button Style="{StaticResource PrimaryButton}"
+            <Button Style="{DynamicResource PrimaryButton}"
                     Command="{Binding CmdReloadSelection}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE72C;" Margin="0,0,6,0"/>
-                    <!-- Refresh -->
                     <TextBlock Text="Reload Selection"/>
                 </StackPanel>
             </Button>
 
-            <!-- Prev -->
-            <Button Style="{StaticResource PrimaryButton}"
+            <Button Style="{DynamicResource PrimaryButton}"
                     Command="{Binding CmdPrev}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE0A6;" Margin="0,0,6,0"/>
-                    <!-- Back -->
                     <TextBlock Text="Prev"/>
                 </StackPanel>
             </Button>
 
-            <!-- Next -->
-            <Button Style="{StaticResource PrimaryButton}"
+            <Button Style="{DynamicResource PrimaryButton}"
                     Command="{Binding CmdNext}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE0AB;" Margin="0,0,6,0"/>
-                    <!-- Forward -->
                     <TextBlock Text="Next"/>
                 </StackPanel>
             </Button>
 
-            <!-- Save Current -->
-            <Button Style="{StaticResource PrimaryButton}"
+            <Button Style="{DynamicResource PrimaryButton}"
                     Command="{Binding CmdSaveCurrent}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE105;" Margin="0,0,6,0"/>
-                    <!-- Save -->
                     <TextBlock Text="Save Current"/>
                 </StackPanel>
             </Button>
 
-            <!-- Save All -->
-            <Button Style="{StaticResource PrimaryButton}"
+            <Button Style="{DynamicResource PrimaryButton}"
                     Command="{Binding CmdSaveAll}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE149;" Margin="0,0,6,0"/>
-                    <!-- SaveAll / SaveAs glyph -->
                     <TextBlock Text="Save All (Host only)"/>
                 </StackPanel>
             </Button>
 
-            <!-- Close -->
-            <Button Style="{StaticResource SecondaryButton}"
+            <Button Style="{DynamicResource SecondaryButton}"
                     Command="{Binding CmdClose}">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE8BB;" Margin="0,0,6,0"/>
-                    <!-- Close -->
                     <TextBlock Text="Close"/>
                 </StackPanel>
             </Button>
         </StackPanel>
 
-        <!-- ====================== -->
-        <!-- DataGrid                -->
-        <!-- ====================== -->
+        <!-- DataGrid -->
         <DataGrid Grid.Row="2"
                   Margin="12,0,12,0"
                   ItemsSource="{Binding Items}"
@@ -161,7 +128,6 @@
                   SelectedIndex="{Binding CurrentIndex, Mode=TwoWay}">
 
             <DataGrid.Columns>
-
                 <DataGridTextColumn Header="Handle"
                                     Binding="{Binding Handle}"
                                     IsReadOnly="True"
@@ -200,9 +166,7 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Foreground"
-                                    Value="{Binding IsInXref,
-                                            Converter={StaticResource invertBool},
-                                            ConverterParameter=disabled}"/>
+                                    Value="{Binding IsInXref, Converter={StaticResource invertBool}, ConverterParameter=disabled}"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                     <DataGridTextColumn.EditingElementStyle>
@@ -219,13 +183,14 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- ====================== -->
-        <!-- Footer tip              -->
-        <!-- ====================== -->
-        <Border Grid.Row="3" Margin="12,8,12,12" Background="{StaticResource SurfaceWhiteBrush}" Padding="8" BorderBrush="{StaticResource NeutralBorderBrush}" BorderThickness="1">
+        <!-- Footer -->
+        <Border Grid.Row="3" Margin="12,8,12,12"
+                Background="{DynamicResource SurfaceWhiteBrush}"
+                Padding="8"
+                BorderBrush="{DynamicResource NeutralBorderBrush}"
+                BorderThickness="1">
             <TextBlock Text="Tip: XREF rows are read-only here. Open the XREF DWG to edit their XData."
-                       Foreground="{StaticResource NeutralMidBrush}"/>
+                       Foreground="{DynamicResource NeutralMidBrush}"/>
         </Border>
-
     </Grid>
 </Window>

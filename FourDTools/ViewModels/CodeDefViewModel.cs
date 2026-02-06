@@ -2,12 +2,10 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Runtime;
 using FourDTools.Models;
 using FourDTools.Services;
 using AcadApp = Autodesk.AutoCAD.ApplicationServices.Application;
@@ -29,10 +27,15 @@ namespace FourDTools.ViewModels
             get => _currentIndex;
             set
             {
+                if (Items.Count == 0) { _currentIndex = -1; RaiseCanExecutes(); return; }
                 if (value < 0) value = 0;
                 if (value >= Items.Count) value = Items.Count - 1;
                 _currentIndex = value;
+
                 RaiseCanExecutes();
+
+                if (Current != null)
+                    OnNavigateToItem(Current);
             }
         }
 
@@ -78,19 +81,14 @@ namespace FourDTools.ViewModels
                 using (doc.LockDocument())
                 using (var tr = db.TransactionManager.StartTransaction())
                 {
-                    // Use current selection; if empty, prompt for polylines
+                    // Use pickfirst if present; otherwise prompt (no DXF filter; we'll filter in code)
                     PromptSelectionResult psr = ed.SelectImplied();
-                    if (psr.Status != PromptStatus.OK || psr.Value.Count == 0)
+                    if (psr.Status != PromptStatus.OK || psr.Value == null || psr.Value.Count == 0)
                     {
-                        var tvs = new TypedValue[]
-                        {
-                            new TypedValue((int)DxfCode.Start, "LWPOLYLINE,POLYLINE,POLYLINE3D")
-                        };
-                        var sf = new SelectionFilter(tvs);
-                        psr = ed.GetSelection(sf);
+                        psr = ed.GetSelection();
                         if (psr.Status != PromptStatus.OK)
                         {
-                            ed.WriteMessage("\nNo polylines selected.");
+                            ed.WriteMessage("\nNo objects selected.");
                             return;
                         }
                     }
@@ -103,6 +101,11 @@ namespace FourDTools.ViewModels
                         var ent = tr.GetObject(so.ObjectId, OpenMode.ForRead) as Entity;
                         if (ent == null) continue;
 
+                        // Accept: POLYLINE/LWPOLYLINE/2D/3D + Civil 3D FeatureLine
+                        var tn = ent.GetType().Name.ToUpperInvariant();
+                        if (tn != "POLYLINE" && tn != "POLYLINE2D" && tn != "POLYLINE3D" && tn != "LWPOLYLINE" && tn != "AECCDBFEATURELINE")
+                            continue;
+
                         bool isInXref = IsEntityInXref(tr, ent);
 
                         string ct, val;
@@ -113,7 +116,7 @@ namespace FourDTools.ViewModels
                             Id = ent.ObjectId,
                             Handle = ent.Handle.ToString(),
                             IsInXref = isInXref,
-                            CodeType = ct,
+                            CodeType = ct,         // you said step 6a is applied in the model setters
                             CodeValue = val,
                             Location = GetEntityLocation(ent),
                             IsDirty = false
@@ -123,7 +126,7 @@ namespace FourDTools.ViewModels
                     }
 
                     if (Items.Count == 0)
-                        ed.WriteMessage("\nNo qualifying polylines found in selection.");
+                        ed.WriteMessage("\nNo valid polylines or feature lines were selected.");
 
                     CurrentIndex = (Items.Count > 0) ? 0 : -1;
 
@@ -165,27 +168,25 @@ namespace FourDTools.ViewModels
             var db = doc.Database;
             var ed = doc.Editor;
 
-
+            // Validation (case-sensitive CodeTypes per your requirement)
             if (string.IsNullOrWhiteSpace(item.CodeType))
             {
                 ed.WriteMessage($"\nItem {item.Handle}: CodeType cannot be empty (choose one of: {string.Join(", ", AllowedTypes)}).");
                 return;
             }
-
+            if (!AllowedTypes.Contains(item.CodeType)) // case-sensitive
+            {
+                ed.WriteMessage($"\nItem {item.Handle}: CodeType '{item.CodeType}' not in allowed list.");
+                return;
+            }
             if (string.IsNullOrWhiteSpace(item.CodeValue))
             {
                 ed.WriteMessage($"\nItem {item.Handle}: CodeValue cannot be empty.");
                 return;
             }
 
-            // Optional: enforce allowed CodeType list
-            if (!AllowedTypes.Contains(item.CodeType))
-            {
-                ed.WriteMessage($"\nItem {item.Handle}: CodeType '{item.CodeType}' not in allowed list.");
-                return;
-            }
-
-            if (!ValidateItem(item, ed)) return;
+            // Canonicalize CodeType to the allowed canonical version (step 6c)
+            string canonicalType = AllowedTypes.First(t => t.Equals(item.CodeType));
 
             try
             {
@@ -199,17 +200,13 @@ namespace FourDTools.ViewModels
                         return;
                     }
 
-                    string canonicalType =
-                        AllowedTypes.First(t => t.Equals(item.CodeType, StringComparison.OrdinalIgnoreCase));
-
                     XDataService.Write(ent, canonicalType, item.CodeValue, tr);
-                    //XDataService.Write(ent, item.CodeType, item.CodeValue, tr);
                     item.IsDirty = false;
 
                     tr.Commit();
                 }
 
-                ed.WriteMessage($"\nSaved XData on {item.Handle} (Type='{item.CodeType}', Value='{item.CodeValue}').");
+                ed.WriteMessage($"\nSaved XData on {item.Handle} (Type='{canonicalType}', Value='{item.CodeValue}').");
             }
             catch (Autodesk.AutoCAD.Runtime.Exception aex)
             {
@@ -219,26 +216,6 @@ namespace FourDTools.ViewModels
             {
                 ed.WriteMessage($"\nError on {item.Handle}: {ex.Message}");
             }
-        }
-
-        private bool ValidateItem(CodeDefItem item, Editor ed)
-        {
-            if (string.IsNullOrWhiteSpace(item.CodeType))
-            {
-                ed.WriteMessage($"\nItem {item.Handle}: CodeType cannot be empty.");
-                return false;
-            }
-            if (!AllowedTypes.Contains(item.CodeType, StringComparer.OrdinalIgnoreCase))
-            {
-                ed.WriteMessage($"\nItem {item.Handle}: '{item.CodeType}' is not a permitted CodeType.");
-                return false;
-            }
-            if (string.IsNullOrWhiteSpace(item.CodeValue))
-            {
-                ed.WriteMessage($"\nItem {item.Handle}: CodeValue cannot be empty.");
-                return false;
-            }
-            return true;
         }
 
         private static bool IsEntityInXref(Transaction tr, Entity ent)
@@ -264,6 +241,88 @@ namespace FourDTools.ViewModels
                     (ge.MinPoint.Z + ge.MaxPoint.Z) * 0.5);
             }
             catch { return Autodesk.AutoCAD.Geometry.Point3d.Origin; }
+        }
+
+        // --- Stable view zoom (no ZOOM command) ---
+        private void ZoomToEntity(ObjectId id)
+        {
+            var doc = AcadApp.DocumentManager.MdiActiveDocument;
+            var ed = doc.Editor;
+
+            using (doc.LockDocument())
+            using (var tr = doc.TransactionManager.StartTransaction())
+            {
+                var ent = tr.GetObject(id, OpenMode.ForRead) as Entity;
+                if (ent == null) return;
+
+                Extents3d ext;
+                try { ext = ent.GeometricExtents; } catch { return; }
+
+                using (var view = ed.GetCurrentView())
+                {
+                    var viewDir = view.ViewDirection;
+                    var wcs2dcs =
+                        Autodesk.AutoCAD.Geometry.Matrix3d.Displacement(view.Target - Autodesk.AutoCAD.Geometry.Point3d.Origin) *
+                        Autodesk.AutoCAD.Geometry.Matrix3d.PlaneToWorld(viewDir) *
+                        Autodesk.AutoCAD.Geometry.Matrix3d.Rotation(-view.ViewTwist, viewDir, view.Target);
+
+                    var dcsExt = new Extents3d(
+                        ext.MinPoint.TransformBy(wcs2dcs.Inverse()),
+                        ext.MaxPoint.TransformBy(wcs2dcs.Inverse()));
+
+                    var center = new Autodesk.AutoCAD.Geometry.Point2d(
+                        (dcsExt.MinPoint.X + dcsExt.MaxPoint.X) * 0.5,
+                        (dcsExt.MinPoint.Y + dcsExt.MaxPoint.Y) * 0.5);
+
+                    var width = dcsExt.MaxPoint.X - dcsExt.MinPoint.X;
+                    var height = dcsExt.MaxPoint.Y - dcsExt.MinPoint.Y;
+
+                    const double pad = 1.1;
+                    width *= pad; height *= pad;
+
+                    double viewRatio = view.Width / view.Height;
+                    double extRatio = (height == 0) ? viewRatio : (width / height);
+
+                    if (extRatio > viewRatio)
+                    {
+                        view.Height = width / viewRatio;
+                        view.Width = width;
+                    }
+                    else
+                    {
+                        view.Width = height * viewRatio;
+                        view.Height = height;
+                    }
+
+                    view.CenterPoint = center;
+                    ed.SetCurrentView(view);
+                }
+
+                tr.Commit();
+            }
+        }
+
+        // --- Called when CurrentIndex changes ---
+        private void OnNavigateToItem(CodeDefItem item)
+        {
+            if (item == null) return;
+
+            try
+            {
+                // 1) Zoom first so tooltip lands on-screen
+                ZoomToEntity(item.Id);
+
+                // 2) Flash outline (transient)
+                TransientOverlayService.FlashOutlineAsync(item.Id, milliseconds: 120);
+
+                // 3) Tooltip with 4D info
+                var tip = $"4D_Type: {item.CodeType ?? "(none)"} | 4D_Value: {item.CodeValue ?? "(none)"}";
+                TransientOverlayService.ShowTooltipAsync(item.Location, tip, milliseconds: 900, textHeight: 2.5);
+            }
+            catch
+            {
+                // Visual sugar only — ignore failures
+            }
         }
     }
 }
